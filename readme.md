@@ -17,9 +17,9 @@ pip install -r requirements.txt
 ## Getting Started
 
 To get started with the project, follow these steps:
-
-1. Set up the OpenAI API key in the configuration file.
-2. Use the provided functions to transcribe audio, generate responses, and convert text to speech.
+1. Rename template.json to config.json
+2. Set up the OpenAI API key in the configuration file.
+3. Use the provided functions to transcribe audio, generate responses, and convert text to speech.
 
 ## Contributing
 

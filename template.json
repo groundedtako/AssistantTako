@@ -1,0 +1,18 @@
+{
+    "openai_api_key": "",
+    "language_model": "gpt-4",
+    "energy_threshold": 2000,
+    "use_azure_chatgpt": false,
+    "azure_deployment_id": "",
+    "role_desc":"",
+    "session_expired_duration": 3600,
+    "max_tokens": 1000,
+    "temperature": 0.9,
+    "proxy": "",
+    "chat_group_session_independent": false,
+    "speech_prefix": [""],
+    "group_chat_target": [""],
+    "query_key_command": "#query key",
+    "recent_days": 5,
+    "openai_sensitive_id": ""
+}
