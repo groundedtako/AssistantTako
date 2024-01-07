@@ -3,6 +3,10 @@ import openai
 import pyaudio
 import speech_recognition as sr
 import whisper
+import pygame
+import requests
+import os
+
 from readconfig import config
 openai.api_key = config["openai_api_key"]
 
@@ -55,6 +59,8 @@ def transcribe_audio_whisper_local(audio_data):
         # TODO: Add a timeout, when engaged in back and forth conversations within
         # a certain timeframe, no need to start with prefix
         if any(prefix in response for prefix in config["speech_prefix"]):
+            for prefix in config["speech_prefix"]:
+                response = response.replace(prefix, "")
             return response
         return None
     
@@ -66,7 +72,7 @@ def transcribe_audio_whisper_local(audio_data):
 def generate_response_openai(transcription):
     try:
         # Generate response using OpenAI GPT-3.5 model with role description
-        prompt = f"{config['role_desc']}\n{transcription}"
+        prompt = transcription
         response = openai.Completion.create(
             model="gpt-3.5-turbo-instruct",
             prompt=prompt,
@@ -76,15 +82,65 @@ def generate_response_openai(transcription):
     except Exception as e:
         print("Error generating response:", str(e))
         return ""
+    
+
+def play_audio_file(file_path):
+    pygame.init()
+    pygame.mixer.init()
+    pygame.mixer.music.load(file_path)
+    pygame.mixer.music.play()
+
+
+def generate_tts_response_openai(text):
+    print("Generating tts response...")
+    api_key = config["openai_api_key"]
+    try:
+        # Make a POST request to the /v1/audio/speech endpoint
+        response = requests.post(
+            "https://api.openai.com/v1/audio/speech",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "tts-1",
+                "input": text,
+                "voice": "alloy"
+            }
+        )
+        if os.path.exists('speech.mp3'):
+            os.remove('speech.mp3')
+        
+        # Save the TTS audio to a file
+        with open('speech.mp3', 'wb') as file:
+            file.write(response.content)
+        
+        # Play the saved audio file
+        pygame.init()
+        pygame.mixer.init()
+        pygame.mixer.music.load('speech.mp3')
+        pygame.mixer.music.play()
+
+        # Wait for the audio to finish playing
+        while pygame.mixer.music.get_busy():
+            pygame.time.Clock().tick(10)
+            
+        # Delete the audio file after playing
+        os.remove('speech.mp3')
+    except Exception as e:
+        print("Error generating TTS response:", str(e))
+        return ""
+
 
 def main():
     # Initialize audio stream
     
     with sr.Microphone() as source:
         recognizer.adjust_for_ambient_noise(source)
-        print("Listening...")
+        # print("Listening...")
         while True:
             try:
+                print("Listening...")
                 audio_data = recognizer.listen(source)
                 transcription = transcribe_audio_whisper_local(audio_data)
                 # transcription = transcribe_audio_whisperAPI(audio_data)
@@ -92,6 +148,10 @@ def main():
                     print("You said:", transcription)
                     response = generate_response_openai(transcription)
                     print("Assistant replied: " + response)
+                    
+                    # pipe responseto TTS
+                    tts_url = generate_tts_response_openai(response)
+                    print(tts_url)
             except sr.WaitTimeoutError:
                 print("...")
                 pass
